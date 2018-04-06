@@ -29,7 +29,23 @@ class App
 
   Route = Struct.new(:route_spec, :block) do
     def match(request)
-      block.call if request.path == route_spec
+      path_components = request.path.split('/')
+      spec_components = route_spec.split('/')
+
+      return unless path_components.length == spec_components.length
+      params = {}
+
+      path_components.zip(spec_components).each do |path_comp, spec_comp|
+        is_var = spec_comp.start_with?(':')
+        if is_var
+          key = spec_comp.sub(/\A:/, '')
+          params[key] = path_comp
+        else
+          return unless path_comp == spec_comp
+        end
+      end
+
+      block.call(params)
     end
   end
 end
