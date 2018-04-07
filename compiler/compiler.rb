@@ -89,7 +89,7 @@ class Parser
   end
 
   def parse_call
-    name = consume(:identifier)
+    name = consume(:identifier).value
     arg_exprs = parse_arg_exprs
     CallNode.new(name, arg_exprs)
   end
@@ -131,10 +131,35 @@ IntegerNode = Struct.new(:value)
 CallNode = Struct.new(:name, :arg_exprs)
 VarRefNode = Struct.new(:value)
 
+class Generator
+  def generate(node)
+    case node
+    when DefNode
+      'function %s(%s) { return %s };' % [
+        node.name,
+        node.arg_names.join(', '),
+        generate(node.body)
+      ]
+    when CallNode
+      '%s(%s)' % [
+        node.name,
+        node.arg_exprs.map { |expr| generate(expr) }.join(', ')
+      ]
+    when VarRefNode
+      node.value
+    when IntegerNode
+      node.value
+    else
+      raise "Unexpected node type: #{node.class}"
+    end
+  end
+end
+
 source_file = File.read('test.src')
-
 tokens = Tokenizer.new(source_file).tokenize
-p tokens.map(&:inspect)
-
 tree = Parser.new(tokens).parse
-p tree
+generated = Generator.new.generate(tree)
+RUNTIME = 'function add(x, y) { return x + y };'.freeze
+TEST = 'console.log(f(1, 2));'.freeze
+
+puts [RUNTIME, generated, TEST].join("\n")
