@@ -8,13 +8,15 @@ def compress(original)
   original.bytes.each do |byte|
     bits = look_up_byte(table, byte)
     compressed << bits
-  end
+  end.flatten
 
-  compressed.flatten.join
+  pack_table(table, compressed)
+
+  compressed
 end
 
-def decompress(table, compressed, data_length)
-  bits = compressed.split('').map(&:to_i)
+def decompress(compressed, data_length)
+  table = unpack_table(compressed)
 
   data_length.times.map do
     look_up_bits(table, bits)
@@ -66,6 +68,27 @@ def look_up_bits(table, bits)
   raise 'oops'
 end
 
+def pack_table(table, compressed)
+  compressed.unshift(table.length)
+
+  table.each do |row|
+    compressed.unshift(row.byte)
+    compressed.unshift(row.bits.length)
+    compressed.unshift(row.bits)
+  end
+end
+
+def unpack_table(compressed)
+  table_length = compressed.shift.first
+
+  table = table_length.times.map do
+    byte = compressed.shift
+    bit_count = compressed.shift
+    bits = compressed.shift(bit_count)
+    TableRow.new(byte, bits)
+  end
+end
+
 Node = Struct.new(:left, :right, :count)
 Leaf = Struct.new(:byte, :count)
 
@@ -77,7 +100,5 @@ p original
 compressed = compress(original)
 p compressed
 
-table = build_table(build_tree(original))
-
-decompressed = decompress(table, compressed, original.length)
+decompressed = decompress(compressed, original.length)
 p decompressed
