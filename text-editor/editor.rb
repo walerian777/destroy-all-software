@@ -9,6 +9,7 @@ class Editor
     end
     @buffer = Buffer.new(lines)
     @cursor = Cursor.new
+    @history = []
   end
 
   def run
@@ -40,18 +41,31 @@ class Editor
     when "\C-n" then @cursor = @cursor.down(@buffer)
     when "\C-b" then @cursor = @cursor.left(@buffer)
     when "\C-f" then @cursor = @cursor.right(@buffer)
+    when "\C-u" then restore_snapshot
     when "\r"
+      save_snapshot
       @buffer.split_line(@cursor.row, @cursor.column)
       @cursor = @cursor.down(@buffer).move_to_column(0)
     when 127.chr
       if @cursor.column > 0
+        save_snapshot
         @buffer = @buffer.delete(@cursor.row, @cursor.column - 1)
         @cursor = @cursor.left(@buffer)
       end
     else
+      save_snapshot
       @buffer = @buffer.insert(char, @cursor.row, @cursor.column)
       @cursor = @cursor.right(@buffer)
     end
+  end
+
+  def save_snapshot
+    @history << [@buffer, @cursor]
+  end
+
+  def restore_snapshot
+    return if @history.empty?
+    @buffer, @cursor = @history.pop
   end
 end
 
