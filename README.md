@@ -5,6 +5,9 @@
 │   └── test.src
 ├── data-compressor
 │   └── zip.rb
+├── text-editor
+│   ├── editor.rb
+│   └── test.txt
 └── web-framework
     ├── Gemfile
     ├── Gemfile.lock
