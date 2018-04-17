@@ -5,6 +5,8 @@
 │   └── test.src
 ├── data-compressor
 │   └── zip.rb
+├── shell
+│   └── shell.rb
 ├── text-editor
 │   ├── editor.rb
 │   └── test.txt
