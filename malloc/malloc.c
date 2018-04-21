@@ -3,21 +3,94 @@
 #include <stdio.h>
 
 static uint8_t MEMORY_POOL[64];
-static uint64_t MEMORY_POOL_USED = 0;
 
-void *malloc(size_t size) {
+struct free_entry {
   void *ptr;
+  uint64_t size;
+};
+typedef struct free_entry free_entry_t;
 
-  ptr = MEMORY_POOL + MEMORY_POOL_USED;
-  MEMORY_POOL_USED += size;
+static free_entry_t FREE_LIST[64] = {
+  (free_entry_t){
+    .ptr = MEMORY_POOL,
+    .size = 64,
+  },
+};
+static uint64_t FREE_LIST_USED = 1;
 
-  return ptr;
+free_entry_t *find_free_entry(size_t size) {
+  free_entry_t *best_entry = FREE_LIST;
+
+  for (uint64_t i = 0; i < FREE_LIST_USED; i++) {
+    free_entry_t *entry;
+    entry = &FREE_LIST[i];
+
+    if (entry->size >= size && entry->size < best_entry->size) {
+      best_entry = entry;
+    }
+  }
+
+  return best_entry;
 }
 
-void free(void *ptr) {
+void print_free_list() {
+  printf("FREE LIST:\n");
+  for (uint64_t i = 0; i < FREE_LIST_USED; i++) {
+    free_entry_t *entry;
+    entry = &FREE_LIST[i];
+    printf("  %p (%llu)\n", entry->ptr, entry->size);
+  }
+}
+
+void *malloc(size_t size) {
+  size += 8; // size metadata
+
+  free_entry_t *entry;
+  entry = find_free_entry(size);
+
+  void *base_ptr;
+  uint64_t *size_ptr;
+  void *user_ptr;
+
+  base_ptr = entry->ptr;
+  size_ptr = base_ptr;
+  user_ptr = base_ptr + 8;
+
+  *size_ptr = size;
+
+  entry->ptr += size;
+  entry->size -= size;
+
+  print_free_list();
+
+  return user_ptr;
+}
+
+void free(void *user_ptr) {
+  free_entry_t *entry;
+  entry = &FREE_LIST[FREE_LIST_USED];
+
+  void *base_ptr;
+  uint64_t *size_ptr;
+  uint64_t size;
+
+  base_ptr = user_ptr - 8;
+  size_ptr = base_ptr;
+
+  size = *size_ptr;
+
+  entry->ptr = base_ptr;
+  entry->size = size;
+
+  FREE_LIST_USED++;
+
+  printf("FREE\n");
+  print_free_list();
 }
 
 int main() {
+  print_free_list();
+
   char *a;
   char *b;
   char *c;
