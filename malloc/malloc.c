@@ -33,15 +33,6 @@ free_entry_t *find_free_entry(size_t size) {
   return best_entry;
 }
 
-void print_free_list() {
-  printf("FREE LIST:\n");
-  for (uint64_t i = 0; i < FREE_LIST_USED; i++) {
-    free_entry_t *entry;
-    entry = &FREE_LIST[i];
-    printf("  %p (%llu)\n", entry->ptr, entry->size);
-  }
-}
-
 void *malloc(size_t size) {
   size += 8; // size metadata
 
@@ -61,7 +52,6 @@ void *malloc(size_t size) {
   entry->ptr += size;
   entry->size -= size;
 
-  print_free_list();
 
   return user_ptr;
 }
@@ -83,14 +73,9 @@ void free(void *user_ptr) {
   entry->size = size;
 
   FREE_LIST_USED++;
-
-  printf("FREE\n");
-  print_free_list();
 }
 
 int main() {
-  print_free_list();
-
   char *a;
   char *b;
   char *c;
