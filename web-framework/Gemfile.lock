@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     pg (1.0.0)
-    rack (2.0.4)
+    rack (2.1.4)
 
 PLATFORMS
   ruby
